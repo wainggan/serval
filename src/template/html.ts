@@ -85,13 +85,18 @@ type AttributeInput = Attribute & {
 	name?: string;
 } & (
 	| {
+		type: 'hidden';
+		name: string;
+		value: string;
+	}
+	| {
 		type: 'button';
 		value: string;
 	}
 	| {
 		type: 'checkbox';
 		checked: boolean;
-		value: boolean;
+		value: string;
 	}
 	| {
 		type: 'file';

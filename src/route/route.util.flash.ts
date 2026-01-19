@@ -18,7 +18,7 @@ export type FlashExport = {
 	};
 };
 
-export const flash_middleware: Middleware<Data, Method, string, {}, FlashExport> = async (ctx) => {
+export const flash_middleware: Middleware<Data, Method, string, {}, FlashExport> = async ctx => {
 	const state: FlashState = {
 		message: null,
 		consumed: false,

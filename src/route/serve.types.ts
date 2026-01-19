@@ -51,13 +51,23 @@ export type Method =
 	| 'OPTIONS'
 	| 'TRACE';
 
-export type Context<Data, Mthd extends Method, Extract extends string, Import extends {} = {}, Export extends {} = {}> = {
+export type Context<
+	Data,
+	Mthd extends Method,
+	Extract extends string,
+	Import extends {} = {},
+	Export extends {} = {},
+> = {
 	readonly build_response: (
 		content: ConstructorParameters<typeof Response>[0],
 		status: keyof typeof status_codes,
 		content_type: keyof typeof content_type_codes,
 	) => Response;
-	readonly build_redirect: (url: URL | string, status: keyof typeof status_codes) => Response;
+	readonly build_redirect: (
+		url: URL | string,
+		status?: keyof typeof status_codes,
+		headers?: Headers,
+	) => Response;
 
 	readonly next: () => Promise<Response | undefined>;
 	
@@ -74,6 +84,12 @@ export type Context<Data, Mthd extends Method, Extract extends string, Import ex
 	readonly ware: Import & Partial<Export>;
 };
 
-export type Middleware<Data, Mthd extends Method, Extract extends string, Import extends {} = {}, Export extends {} = {}> =
-	(ctx: Readonly<Context<Data, Mthd, Extract, Import, Export>>) => Promise<Response | undefined>;
+export type Middleware<
+	Data,
+	Mthd extends Method,
+	Extract extends string,
+	Import extends {} = {},
+	Export extends {} = {},
+> = (ctx: Readonly<Context<Data, Mthd, Extract, Import, Export>>) =>
+	Promise<Response | undefined>;
 

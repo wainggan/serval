@@ -3,7 +3,9 @@ import { Router } from "./serve.ts";
 import { DB } from "../db.ts";
 
 import post from "./route.post.tsx";
+import tag from "./route.tag.tsx";
 import { flash_middleware } from "./route.util.flash.ts";
+import url_list from "./url_list.ts";
 
 export type Data = {
 	db: DB;
@@ -13,19 +15,19 @@ export const router = new Router<Data>();
 
 router.get(
 	'/ping',
-	async (ctx) => {
+	async ctx => {
 		return ctx.build_response(`ping`, 'ok', 'txt');
 	},
 );
 
 router.get(
 	'/content/:file',
-	async (ctx) => {
-		const url = `./db/content/${ctx.extract.file}`;
+	async ctx => {
+		const dir = `./db/content/${ctx.extract.file}`;
 		
 		let file;
 		try {
-			file = await Deno.readFile(url);
+			file = await Deno.readFile(dir);
 		}
 		catch (_e: unknown) {
 			return ctx.build_response('not found', 'not_found', 'txt');
@@ -40,23 +42,19 @@ router.get(
 	},
 );
 
+router.get(url_list.post_list(), flash_middleware, post.post_list);
+router.post(url_list.post_list(), flash_middleware, post.post_list_api);
 
-router.get('/post', flash_middleware, post.post_list);
-router.post('/post/__api', flash_middleware, post.post_list_api);
+router.get(url_list.post_display(':post_id'), flash_middleware, post.post_display);
 
-router.get('/post/:post_id', flash_middleware, post.post_display);
+router.get(url_list.post_edit(':post_id'), flash_middleware, post.post_edit);
+router.post(url_list.post_edit(':post_id'), flash_middleware, post.post_edit_api);
 
-router.get('/post/:post_id/edit', flash_middleware, post.post_edit);
-router.post('/post/:post_id/edit/__api/upload', flash_middleware, post.post_edit_api_file_upload);
-router.post('/post/:post_id/edit/__api/meta', flash_middleware, post.post_edit_api_meta);
-router.post('/post/:post_id/edit/__api/action', flash_middleware, post.post_edit_api_action);
-router.post('/post/:post_id/edit/__api/delete/:file_id', flash_middleware, post.post_edit_api_file_delete);
+router.get(url_list.tag_list(), flash_middleware, tag.tag_list);
+router.post(url_list.tag_list(), flash_middleware, tag.tag_list_api);
 
-router.get('/tag', flash_middleware, post.tag_list);
-router.post('/tag/__api/new', flash_middleware, post.tag_list_api_new);
+router.get(url_list.tag_display(':tag_id'), flash_middleware, tag.tag_display);
 
-router.get('/tag/:tag_id', flash_middleware, post.tag_display);
-
-router.get('/tag/:tag_id/edit', flash_middleware, post.tag_edit);
-router.post('/tag/:tag_id/edit/__api/edit', flash_middleware, post.tag_edit_api_edit);
+router.get(url_list.tag_edit(':tag_id'), flash_middleware, tag.tag_edit);
+router.post(url_list.tag_edit(':tag_id'), flash_middleware, tag.tag_edit_api);
 

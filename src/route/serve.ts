@@ -117,6 +117,17 @@ export class Router<Data> {
 		this.add('POST', match, middleware);
 	}
 
+	put<
+		T extends `/${string}`,
+		// deno-lint-ignore no-explicit-any
+		const U extends types.Middleware<Data, 'PUT', types_util.ExtractUrl<T>, any, any>[],
+	>(
+		match: T,
+		...middleware: types_util.CheckFlow<types_util.MiddlewareToFlow<U>, U>
+	) {
+		this.add('PUT', match, middleware);
+	}
+
 	delete<
 		T extends `/${string}`,
 		// deno-lint-ignore no-explicit-any
@@ -161,7 +172,7 @@ export class Router<Data> {
 					);
 					return response;
 				},
-				build_redirect(url, status, headers = new Headers()) {
+				build_redirect(url, status = 'see_other', headers = new Headers()) {
 					const str = typeof url === 'string' ? url : url.href;
 					headers.set('Location', str);
 					return new Response(
