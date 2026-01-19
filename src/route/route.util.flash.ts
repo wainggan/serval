@@ -1,7 +1,7 @@
 
 import { TextEncoder } from "node:util";
 import { Data } from "./route.ts";
-import { Method, Middleware } from "./serve.types.ts";
+import { Method, Middleware } from "../server/serve.types.ts";
 
 import * as std_cookie from "@std/http/cookie";
 

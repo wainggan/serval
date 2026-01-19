@@ -1,12 +1,12 @@
 
 import { Data } from "./route.ts";
-import { content_type_codes_inv, Middleware } from "./serve.types.ts";
+import { content_type_codes_inv, Middleware } from "../server/serve.types.ts";
 import { jsx } from "../template/jsx.ts";
 import { render } from "../template/html.ts";
 import * as template from "../template/template.tsx";
 import { FlashExport } from "./route.util.flash.ts";
 import { Err } from "../db.ts";
-import url_list from "./url_list.ts";
+import url_list from "../server/url_list.ts";
 
 const post_list: Middleware<Data, 'GET', never> = async ctx => {
 	const limit = 10;

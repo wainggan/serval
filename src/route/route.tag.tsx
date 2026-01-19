@@ -1,11 +1,11 @@
 
 import { jsx } from "../template/jsx.ts";
 import { Data } from "./route.ts";
-import { Middleware } from "./serve.types.ts";
+import { Middleware } from "../server/serve.types.ts";
 import * as template from "../template/template.tsx";
 import { FlashExport } from "./route.util.flash.ts";
 import { render } from "../template/html.ts";
-import url_list from "./url_list.ts";
+import url_list from "../server/url_list.ts";
 import { Err } from "../db.ts";
 
 const tag_list: Middleware<Data, 'GET', never> = async ctx => {

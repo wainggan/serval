@@ -1,5 +1,5 @@
 
-import { content_type_codes } from "./route/serve.types.ts";
+import { content_type_codes } from "./server/serve.types.ts";
 
 type Config = {
 	db_path: string;

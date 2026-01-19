@@ -1,6 +1,6 @@
 
 import { DatabaseSync, StatementSync } from "node:sqlite";
-import { content_type_codes } from "./route/serve.types.ts";
+import { content_type_codes } from "./server/serve.types.ts";
 
 export type Post = {
 	id: number;

@@ -1,11 +1,11 @@
 
-import { Router } from "./serve.ts";
+import { Router } from "../server/serve.ts";
 import { DB } from "../db.ts";
 
 import post from "./route.post.tsx";
 import tag from "./route.tag.tsx";
 import { flash_middleware } from "./route.util.flash.ts";
-import url_list from "./url_list.ts";
+import url_list from "../server/url_list.ts";
 
 export type Data = {
 	db: DB;

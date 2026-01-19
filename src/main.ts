@@ -1,7 +1,7 @@
 
 import { SqlDB, type DB } from "./db.ts";
 import { router } from "./route/route.ts";
-import { response_handler } from "./route/serve.ts";
+import { response_handler } from "./server/serve.ts";
 
 import config from "../config.ts";
 
