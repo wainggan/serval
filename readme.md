@@ -1,5 +1,5 @@
 
-# raas
+# serval
 
 small booru-like.
 
