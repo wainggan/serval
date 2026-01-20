@@ -376,7 +376,7 @@ const post_edit_api: Middleware<Data, 'POST', 'post_id', FlashExport> = async ct
 	return ctx.build_redirect(url_list.post_edit(post_id));
 };
 
-const post = {
+export default {
 	post_list,
 	post_list_api,
 
@@ -384,7 +384,5 @@ const post = {
 	
 	post_edit,
 	post_edit_api,
-};
-
-export default post;
+} as const;
 

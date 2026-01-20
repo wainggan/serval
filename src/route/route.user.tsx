@@ -322,7 +322,7 @@ const user_edit_api: Middleware<Data, 'POST', 'tag_id', FlashExport> = async ctx
 	return ctx.build_redirect(url_list.tag_edit(tag_id));
 };
 
-const user = {
+export default {
 	user_list,
 	user_list_api,
 	user_logout,
@@ -334,7 +334,5 @@ const user = {
 
 	user_edit,
 	user_edit_api,
-};
-
-export default user;
+} as const;
 

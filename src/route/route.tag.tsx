@@ -237,7 +237,7 @@ const tag_edit_api: Middleware<Data, 'POST', 'tag_id', FlashExport> = async ctx 
 	return ctx.build_redirect(url_list.tag_edit(tag_id));
 };
 
-const tag = {
+export default {
 	tag_list,
 	tag_list_api,
 
@@ -245,7 +245,5 @@ const tag = {
 	
 	tag_edit,
 	tag_edit_api,
-};
-
-export default tag;
+} as const;
 
