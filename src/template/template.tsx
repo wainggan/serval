@@ -77,3 +77,19 @@ export const Base = (
 	);
 };
 
+export const Flash = (
+	{
+		message,
+	}: {
+		message: string | null
+	},
+) => {
+	return message === null
+		? <> </>
+		: <>
+			<div class="flash">
+				{ message }
+			</div>
+		</>;
+};
+

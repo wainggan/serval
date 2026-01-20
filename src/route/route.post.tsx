@@ -9,7 +9,7 @@ import { Err } from "../common.ts";
 import url_list from "./url_list.ts";
 import { SessionExport } from "./route.util.session.ts";
 
-const post_list: Middleware<Data, 'GET', never, SessionExport> = async ctx => {
+const post_list: Middleware<Data, 'GET', never, FlashExport & SessionExport> = async ctx => {
 	const limit = 10;
 
 	const offset = Number(ctx.query_url('offset') ?? '0');
@@ -47,6 +47,8 @@ const post_list: Middleware<Data, 'GET', never, SessionExport> = async ctx => {
 	const dom = (
 		<template.Base title="posts" user={ ctx.ware.session.user() }>
 			<h1>post listing</h1>
+
+			<template.Flash message={ ctx.ware.flash.get() }/>
 
 			<form action="" target="_self" method="post" enctype="application/x-www-form-urlencoded" id="form">
 				<input type="hidden" name="type" value="new"></input>
@@ -125,6 +127,7 @@ const post_display: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExpo
 	const dom = (
 		<template.Base title="post" user={ ctx.ware.session.user() }>
 			<h1>post: { post.subject }</h1>
+			<template.Flash message={ ctx.ware.flash.get() }/>
 			{
 				...files_element
 			}
@@ -145,8 +148,6 @@ const post_display: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExpo
 };
 
 const post_edit: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExport> = async ctx => {
-	const flash = ctx.ware.flash.get();
-
 	const id = Number(ctx.extract.post_id);
 
 	const post = await ctx.data.db.post_get(id);
@@ -186,9 +187,9 @@ const post_edit: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExport>
 
 	const dom = (
 		<template.Base title="post" user={ ctx.ware.session.user() }>
-			{ flash ?? undefined }
-
 			<h1>edit: '{ post.subject }'</h1>
+
+			<template.Flash message={ ctx.ware.flash.get() }/>
 
 			<a href={ `/post/${ctx.extract.post_id}` }>back</a>
 
@@ -216,7 +217,7 @@ const post_edit: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExport>
 
 				<input type="text" name="subject" value={ post.subject }></input>
 				<textarea name="content">{ post.content }</textarea>
-				<textarea name="tags">{ ...tags.values().map(x => x.name).toArray() }</textarea>
+				<textarea name="tags">{ ...tags.values().map(x => x.name + ' ').toArray() }</textarea>
 				<button type="submit">submit</button>
 			</form>
 

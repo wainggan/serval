@@ -9,7 +9,7 @@ import url_list from "./url_list.ts";
 import { Err } from "../common.ts";
 import { SessionExport } from "./route.util.session.ts";
 
-const tag_list: Middleware<Data, 'GET', never, SessionExport> = async ctx => {
+const tag_list: Middleware<Data, 'GET', never, FlashExport & SessionExport> = async ctx => {
 	const limit = 10;
 
 	const offset = Number(ctx.query_url('offset') ?? '0');
@@ -45,6 +45,8 @@ const tag_list: Middleware<Data, 'GET', never, SessionExport> = async ctx => {
 	const dom = (
 		<template.Base title="tags" user={ ctx.ware.session.user() }>
 			<h1>tag listing</h1>
+
+			<template.Flash message={ ctx.ware.flash.get() }/>
 
 			<form action="" method="post" target="_self" enctype="application/x-www-form-urlencoded" id="form">
 				<input type="hidden" name="type" value="new"/>
@@ -118,13 +120,6 @@ const tag_display: Middleware<Data, 'GET', 'tag_id', SessionExport> = async ctx 
 };
 
 const tag_edit: Middleware<Data, 'GET', 'tag_id', FlashExport & SessionExport> = async ctx => {
-	const flash = ctx.ware.flash.get();
-	const flash_element = flash === null
-		? null
-		: <div>
-			{ flash }
-		</div>
-
 	const tag_id = Number(ctx.extract.tag_id);
 
 	const tag = await ctx.data.db.tag_get(tag_id);
@@ -136,7 +131,7 @@ const tag_edit: Middleware<Data, 'GET', 'tag_id', FlashExport & SessionExport> =
 		<template.Base title={ tag.name } user={ ctx.ware.session.user() }>
 			<h1>editing '{ tag.name }'</h1>
 
-			{ flash_element }
+			<template.Flash message={ ctx.ware.flash.get() }/>
 
 			<a href={ `${ctx.url.origin}/tag/${tag_id}` }>back</a>
 
