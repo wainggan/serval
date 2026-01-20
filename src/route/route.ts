@@ -5,6 +5,7 @@ import { DB } from "../db.ts";
 import post from "./route.post.tsx";
 import tag from "./route.tag.tsx";
 import user from "./route.user.tsx";
+import index from "./route.index.tsx";
 import { flash_middleware } from "./route.util.flash.ts";
 import url_list from "./url_list.ts";
 import not_found from "./route.404.tsx";
@@ -47,6 +48,8 @@ router.get(
 	},
 );
 
+router.get(url_list.index(), session_middleware, index.index);
+
 router.get(url_list.post_list(), flash_middleware, session_middleware, post.post_list);
 router.post(url_list.post_list(), flash_middleware, post.post_list_api);
 
@@ -67,6 +70,7 @@ router.get(url_list.user_list(), session_middleware, user.user_list);
 
 router.get(url_list.user_login(), session_middleware, user.user_login);
 router.post(url_list.user_login(), flash_middleware, session_middleware, user.user_login_api);
+router.get(url_list.user_logout(), flash_middleware, session_middleware, user.user_logout);
 
 router.get(url_list.user_display(':username'), session_middleware, user.user_display);
 

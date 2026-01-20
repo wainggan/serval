@@ -10,6 +10,7 @@ export type SessionExport = {
 	session: {
 		readonly user: () => User | null;
 		readonly set: (session_id: string) => void;
+		readonly logout: () => void;
 	};
 };
 
@@ -17,11 +18,13 @@ export const session_middleware: Middleware<Data, Method, never, {}, SessionExpo
 	const state: {
 		session_id: null | string;
 		session_id_new: null | string;
+		session_id_invalid: boolean;
 		session_id_logout: boolean;
 		user: null | User;
 	} = {
 		session_id: null,
 		session_id_new: null,
+		session_id_invalid: false,
 		session_id_logout: false,
 		user: null,
 	};
@@ -31,14 +34,12 @@ export const session_middleware: Middleware<Data, Method, never, {}, SessionExpo
 		const base64 = cookies['session'];
 		const buffer = Uint8Array.fromBase64(base64);
 		state.session_id = new TextDecoder().decode(buffer);
-		console.log(state.session_id)
 	}
 
 	if (state.session_id !== null) {
 		const user = await ctx.data.db.session_user(state.session_id);
-		console.log(user)
 		if (user instanceof Err) {
-			state.session_id_logout = true;
+			state.session_id_invalid = true;
 		}
 		else {
 			state.user = user;
@@ -52,6 +53,9 @@ export const session_middleware: Middleware<Data, Method, never, {}, SessionExpo
 		set(session_id) {
 			state.session_id_new = session_id;
 		},
+		logout() {
+			state.session_id_logout = true;
+		}
 	};
 
 	const response = await ctx.next();
@@ -61,7 +65,6 @@ export const session_middleware: Middleware<Data, Method, never, {}, SessionExpo
 
 	if (state.session_id_new !== null) {
 		const buffer = new TextEncoder().encode(state.session_id_new);
-		console.log(state.session_id_new)
 		std_cookie.setCookie(response.headers, {
 			name: 'session',
 			value: buffer.toBase64(),
@@ -73,13 +76,18 @@ export const session_middleware: Middleware<Data, Method, never, {}, SessionExpo
 			secure: true,
 		});
 	}
-	else if (state.session_id_logout) {
-		console.log('oops')
-		std_cookie.deleteCookie(response.headers, 'session', {
-			path: '/',
-			httpOnly: true,
-			secure: true,
-		});
+	else if (state.session_id !== null) {
+		if (state.session_id_logout) {
+			await ctx.data.db.session_delete(state.session_id);
+		}
+
+		if (state.session_id_invalid) {
+			std_cookie.deleteCookie(response.headers, 'session', {
+				path: '/',
+				httpOnly: true,
+				secure: true,
+			});
+		}
 	}
 
 	return response;

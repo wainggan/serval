@@ -1,5 +1,5 @@
 
-const url_list = {
+export default {
 	index: () => `/` as const,
 
 	post_list: () => `/post` as const,
@@ -12,11 +12,10 @@ const url_list = {
 
 	user_list: () => `/user` as const,
 	user_login: () => `/user/login` as const,
+	user_logout: () => `/user/logout` as const,
 	user_display: <Username extends string>(username: Username) => `/user/${username}` as const,
 	user_edit: <Username extends string>(username: Username) => `/user/${username}/edit` as const,
-} satisfies {
-	readonly [key: string]: (...id: string[]) => string;
+} as const satisfies {
+	[key: string]: (...id: string[]) => string;
 };
-
-export default url_list;
 

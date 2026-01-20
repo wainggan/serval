@@ -80,7 +80,7 @@ const user_login_api: Middleware<Data, 'POST', never, FlashExport & SessionExpor
 				ctx.ware.session.set(session);
 
 				ctx.ware.flash.set(`successfully logged in!`);
-				break;
+				return ctx.build_redirect(url_list.user_display(user.username));
 			} else {
 				ctx.ware.flash.set(`incorrect password.`);
 				break;
@@ -118,7 +118,7 @@ const user_login_api: Middleware<Data, 'POST', never, FlashExport & SessionExpor
 
 			ctx.ware.session.set(session);
 
-			break;
+			return ctx.build_redirect(url_list.user_display(user.username));
 		}
 
 		default: {
@@ -129,6 +129,11 @@ const user_login_api: Middleware<Data, 'POST', never, FlashExport & SessionExpor
 	return ctx.build_redirect(url_list.user_login());
 };
 
+const user_logout: Middleware<Data, 'GET', never, FlashExport & SessionExport> = async ctx => {
+	ctx.ware.session.logout();
+	ctx.ware.flash.set(`successfully logged out!`);
+	return ctx.build_redirect(url_list.index());
+};
 
 const user_list: Middleware<Data, 'GET', never, SessionExport> = async ctx => {
 	const limit = 10;
@@ -320,6 +325,7 @@ const user_edit_api: Middleware<Data, 'POST', 'tag_id', FlashExport> = async ctx
 const user = {
 	user_list,
 	user_list_api,
+	user_logout,
 
 	user_login,
 	user_login_api,
