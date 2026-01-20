@@ -72,7 +72,7 @@ const post_display: Middleware<Data, 'GET', 'post_id', FlashExport> = async ctx 
 
 	const post = await ctx.data.db.post_get(id);
 	if (post instanceof Err) {
-		return ctx.build_response(`post does not exist`, 'not_found', 'txt');
+		return undefined
 	}
 
 	const files = await ctx.data.db.post_files(id);

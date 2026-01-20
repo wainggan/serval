@@ -6,12 +6,15 @@ import post from "./route.post.tsx";
 import tag from "./route.tag.tsx";
 import { flash_middleware } from "./route.util.flash.ts";
 import url_list from "../server/url_list.ts";
+import not_found from "./route.404.tsx";
 
 export type Data = {
 	db: DB;
 };
 
 export const router = new Router<Data>();
+
+router.set_404(not_found);
 
 router.get(
 	'/ping',

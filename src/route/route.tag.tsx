@@ -82,7 +82,7 @@ const tag_display: Middleware<Data, 'GET', 'tag_id'> = async ctx => {
 
 	const tag = await ctx.data.db.tag_get(tag_id);
 	if (tag instanceof Err) {
-		return ctx.build_response('not found', 'not_found', 'txt');
+		return undefined;
 	}
 	
 	const dom = (
@@ -104,6 +104,11 @@ const tag_display: Middleware<Data, 'GET', 'tag_id'> = async ctx => {
 
 const tag_edit: Middleware<Data, 'GET', 'tag_id', FlashExport> = async ctx => {
 	const flash = ctx.ware.flash.get();
+	const flash_element = flash === null
+		? null
+		: <div>
+			{ flash }
+		</div>
 
 	const tag_id = Number(ctx.extract.tag_id);
 
@@ -116,9 +121,7 @@ const tag_edit: Middleware<Data, 'GET', 'tag_id', FlashExport> = async ctx => {
 		<template.Base title={ tag.name }>
 			<h1>editing '{ tag.name }'</h1>
 
-			<p>
-			{ flash ?? undefined }
-			</p>
+			{ flash_element }
 
 			<a href={ `${ctx.url.origin}/tag/${tag_id}` }>back</a>
 

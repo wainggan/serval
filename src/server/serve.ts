@@ -74,6 +74,13 @@ export class Router<Data> {
 		'OPTIONS': [],
 		'TRACE': [],
 	};
+
+	private inner_not_found: undefined | types.Middleware<Data, types.Method, never, {}, {}>;
+
+	set_404(middleware: types.Middleware<Data, types.Method, never, {}, {}>): this {
+		this.inner_not_found = middleware;
+		return this;
+	}
 	
 	add<
 		M extends types.Method,
@@ -212,6 +219,13 @@ export class Router<Data> {
 
 			if (response !== undefined) {
 				return response;
+			}
+
+			if (this.inner_not_found !== undefined) {
+				const not_found = await this.inner_not_found(context);
+				if (not_found !== undefined) {
+					return not_found;
+				}
 			}
 
 			throw new Error(`no response given`);

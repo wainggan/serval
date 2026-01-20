@@ -147,6 +147,9 @@ export class SqlDB implements DB {
 				FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
 				FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 			);
+
+			CREATE INDEX IF NOT EXISTS idx_tagged_post ON tagged(post_id);
+			CREATE INDEX IF NOT EXISTS idx_tagged_tag ON tagged(tag_id);
 		`);
 
 		this.#_statement_cache = new Map();
