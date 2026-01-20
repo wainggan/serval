@@ -1,14 +1,14 @@
 
-import { SqlDB, type DB } from "./db.ts";
 import { router } from "./route/route.ts";
 import { response_handler } from "./server/serve.ts";
 
 import config from "../config.ts";
+import { SqlDB } from "./db.sql.ts";
 
 await Deno.mkdir(config.db_path, { recursive: true });
 await Deno.mkdir(config.db_path + `/content`, { recursive: true });
 
-const db = new SqlDB(config.db_path) as DB;
+const db = new SqlDB(config.db_path);
 
 Deno.serve(
 	{

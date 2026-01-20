@@ -1,14 +1,15 @@
 
 import { Data } from "./route.ts";
 import { content_type_codes_inv, Middleware } from "../server/serve.types.ts";
-import { jsx } from "../template/jsx.ts";
+import { jsx, fragment } from "../template/jsx.ts";
 import { render } from "../template/html.ts";
 import * as template from "../template/template.tsx";
 import { FlashExport } from "./route.util.flash.ts";
-import { Err } from "../db.ts";
-import url_list from "../server/url_list.ts";
+import { Err } from "../common.ts";
+import url_list from "./url_list.ts";
+import { SessionExport } from "./route.util.session.ts";
 
-const post_list: Middleware<Data, 'GET', never> = async ctx => {
+const post_list: Middleware<Data, 'GET', never, SessionExport> = async ctx => {
 	const limit = 10;
 
 	const offset = Number(ctx.query_url('offset') ?? '0');
@@ -16,7 +17,26 @@ const post_list: Middleware<Data, 'GET', never> = async ctx => {
 
 	const tags = tags_str.trim() === '' ? [] : tags_str.split(' ');
 
-	const posts = await ctx.data.db.post_list(tags, limit, offset);
+	let post_element;
+
+	const posts = await ctx.data.db.post_search(tags, limit, offset);
+	if (posts instanceof Err) {
+		post_element = (
+			<li>{ posts.message }</li>
+		);
+	}
+	else {
+		post_element = (
+			<>
+			{
+				...posts
+				.map(x =>
+					<li><a href={ `/post/${x.id}` }>{ x.id } - { x.subject }</a></li>
+				)
+			}
+			</>
+		);
+	}
 
 	const url_back = new URL(ctx.url);
 	url_back.searchParams.set('offset', Math.max(0, offset - limit).toString());
@@ -25,7 +45,7 @@ const post_list: Middleware<Data, 'GET', never> = async ctx => {
 	url_forward.searchParams.set('offset', (offset + limit).toString());
 
 	const dom = (
-		<template.Base title="posts">
+		<template.Base title="posts" user={ ctx.ware.session.user() }>
 			<h1>post listing</h1>
 
 			<form action="" target="_self" method="post" enctype="application/x-www-form-urlencoded" id="form">
@@ -34,12 +54,7 @@ const post_list: Middleware<Data, 'GET', never> = async ctx => {
 			</form>
 
 			<ul>
-				{
-					...posts
-					.map(x =>
-						<li><a href={ `/post/${x.id}` }>{ x.id } - { x.subject }</a></li>
-					)
-				}
+				{ post_element }
 			</ul>
 
 			<a href={ url_back.href }>back</a>
@@ -59,6 +74,10 @@ const post_list_api: Middleware<Data, 'POST', never, FlashExport> = async ctx =>
 	switch (form_type) {
 		case 'new': {
 			const post_id = await ctx.data.db.post_new();
+			if (post_id instanceof Err) {
+				// todo:
+				throw post_id.toError();
+			}
 			return ctx.build_redirect(url_list.post_edit(post_id));
 		}
 	}
@@ -67,7 +86,7 @@ const post_list_api: Middleware<Data, 'POST', never, FlashExport> = async ctx =>
 	return ctx.build_redirect(url_list.post_list());
 };
 
-const post_display: Middleware<Data, 'GET', 'post_id', FlashExport> = async ctx => {
+const post_display: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExport> = async ctx => {
 	const id = Number(ctx.extract.post_id);
 
 	const post = await ctx.data.db.post_get(id);
@@ -76,6 +95,10 @@ const post_display: Middleware<Data, 'GET', 'post_id', FlashExport> = async ctx 
 	}
 
 	const files = await ctx.data.db.post_files(id);
+	if (files instanceof Err) {
+		// todo:
+		throw files.toError();
+	}
 	
 	const files_element = await Promise.all(files.values().map(async x => {
 		const url = await ctx.data.db.file_url(x);
@@ -88,6 +111,11 @@ const post_display: Middleware<Data, 'GET', 'post_id', FlashExport> = async ctx 
 	}));
 
 	const tags = await ctx.data.db.tagged_from_post(id);
+	if (tags instanceof Err) {
+		// todo:
+		throw tags.toError();
+	}
+
 	const tags_element = tags.map(x => {
 		return (
 			<li><a href={ url_list.tag_display(x.id) }>{ x.name }</a></li>
@@ -95,7 +123,7 @@ const post_display: Middleware<Data, 'GET', 'post_id', FlashExport> = async ctx 
 	})
 
 	const dom = (
-		<template.Base title="post">
+		<template.Base title="post" user={ ctx.ware.session.user() }>
 			<h1>post: { post.subject }</h1>
 			{
 				...files_element
@@ -116,7 +144,7 @@ const post_display: Middleware<Data, 'GET', 'post_id', FlashExport> = async ctx 
 	return ctx.build_response(str, 'ok', 'html');
 };
 
-const post_edit: Middleware<Data, 'GET', 'post_id', FlashExport> = async ctx => {
+const post_edit: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExport> = async ctx => {
 	const flash = ctx.ware.flash.get();
 
 	const id = Number(ctx.extract.post_id);
@@ -127,6 +155,10 @@ const post_edit: Middleware<Data, 'GET', 'post_id', FlashExport> = async ctx => 
 	}
 
 	const files = await ctx.data.db.post_files(id);
+	if (files instanceof Err) {
+		// todo:
+		throw files.toError();
+	}
 
 	const files_element = await Promise.all(files.values().map(async (x, i) => {
 		const url = await ctx.data.db.file_url(x);
@@ -147,9 +179,13 @@ const post_edit: Middleware<Data, 'GET', 'post_id', FlashExport> = async ctx => 
 	}));
 
 	const tags = await ctx.data.db.tagged_from_post(id);
+	if (tags instanceof Err) {
+		// todo:
+		throw tags.toError();
+	}
 
 	const dom = (
-		<template.Base title="post">
+		<template.Base title="post" user={ ctx.ware.session.user() }>
 			{ flash ?? undefined }
 
 			<h1>edit: '{ post.subject }'</h1>
@@ -213,12 +249,18 @@ const post_edit_api: Middleware<Data, 'POST', 'post_id', FlashExport> = async ct
 				form_subject === null || typeof form_subject !== 'string' ||
 				form_content === null || typeof form_content !== 'string'
 			) {
-				return ctx.build_redirect(url_list.post_edit(post_id));
+				ctx.ware.flash.set(`malformed form`);
+				break;
 			}
 
 			const tags_list = form_tags.trim().split(/\s+/).map(x => x.toLowerCase());
 
-			const resolved_tags = await ctx.data.db.tag_resolve(tags_list);
+			const resolved_tags = await ctx.data.db.tag_get_name_list(tags_list);
+			if (resolved_tags instanceof Err) {
+				ctx.ware.flash.set(resolved_tags.message);
+				break;
+			}
+
 			const resolved_ids = resolved_tags.map(x => x.id);
 
 			const _result_tags = await ctx.data.db.tagged_into_post(post_id, resolved_ids);
@@ -226,30 +268,30 @@ const post_edit_api: Middleware<Data, 'POST', 'post_id', FlashExport> = async ct
 
 			const post = await ctx.data.db.post_get(post_id);
 			if (post instanceof Err) {
-				return ctx.build_redirect(url_list.post_edit(post_id));
+				break;
 			}
 
 			post.subject = form_subject.trim();
 			post.content = form_content.trim();
 
-			const result_post = await ctx.data.db.post_set(post);
+			const result_post = await ctx.data.db.post_update(post);
 			if (result_post instanceof Err) {
-				return ctx.build_redirect(url_list.post_edit(post_id));
+				break;
 			}
 
-			return ctx.build_redirect(url_list.post_edit(post_id));
+			break;
 		}
 
 		case 'upload': {
 			const file = form.get('file');
 			if (file === null || typeof file === 'string') {
 				ctx.ware.flash.set(`malformed upload`);
-				return ctx.build_redirect(url_list.post_edit(post_id));
+				break;
 			}
 
 			if (!(file.type in content_type_codes_inv)) {
 				ctx.ware.flash.set(`unknown mime type: ${file.type}`);
-				return ctx.build_redirect(url_list.post_edit(post_id));
+				break;
 			}
 
 			const type = content_type_codes_inv[file.type as keyof typeof content_type_codes_inv];
@@ -259,38 +301,38 @@ const post_edit_api: Middleware<Data, 'POST', 'post_id', FlashExport> = async ct
 			const result = await ctx.data.db.file_add(post_id, type, buffer);
 			if (result instanceof Err) {
 				ctx.ware.flash.set(result.message);
-				return ctx.build_redirect(url_list.post_edit(post_id));
+				break;
 			}
 
-			return ctx.build_redirect(url_list.post_edit(post_id));
+			break;
 		}
 
 		case 'action': {
 			const form_mode = form.get('mode');
 			if (form_mode === null || typeof form_mode !== 'string') {
 				ctx.ware.flash.set(`malformed form`);
-				return ctx.build_redirect(url_list.post_edit(post_id));
+				break;
 			}
 
 			if (form_mode === 'delete') {
 				const files = await ctx.data.db.post_files(post_id);
 				if (files instanceof Err) {
 					ctx.ware.flash.set(files.message);
-					return ctx.build_redirect(url_list.post_edit(post_id));
+					break;
 				}
 
 				for (const file_id of files) {
-					const result = await ctx.data.db.file_del(file_id);
+					const result = await ctx.data.db.file_delete(file_id);
 					if (result instanceof Err) {
 						ctx.ware.flash.set(result.message);
-						return ctx.build_redirect(url_list.post_edit(post_id));
+						break;
 					}
 				}
 
-				const result = ctx.data.db.post_del(post_id);
+				const result = ctx.data.db.post_delete(post_id);
 				if (result instanceof Err) {
 					ctx.ware.flash.set(result.message);
-					return ctx.build_redirect(url_list.post_edit(post_id));
+					break;
 				}
 
 				ctx.ware.flash.set(`post successfully deleted`);
@@ -298,7 +340,7 @@ const post_edit_api: Middleware<Data, 'POST', 'post_id', FlashExport> = async ct
 			}
 
 			ctx.ware.flash.set(`malformed form`);
-			return ctx.build_redirect(url_list.post_edit(post_id));
+			break;
 		}
 
 		case 'file-action': {
@@ -309,25 +351,28 @@ const post_edit_api: Middleware<Data, 'POST', 'post_id', FlashExport> = async ct
 				form_file_id === null || typeof form_file_id !== 'string'
 			) {
 				ctx.ware.flash.set(`malformed form`);
-				return ctx.build_redirect(url_list.post_edit(post_id));
+				break;
 			}
 
 			const file_id = Number(form_file_id);
 
 			if (form_mode === 'delete') {
-				const result = await ctx.data.db.file_del(file_id);
+				const result = await ctx.data.db.file_delete(file_id);
 				if (result instanceof Err) {
 					ctx.ware.flash.set(result.message);
 				}
-				return ctx.build_redirect(url_list.post_edit(post_id));
+				break;
 			}
 			
 			ctx.ware.flash.set(`malformed form`);
 			return ctx.build_redirect(url_list.post_edit(post_id));
 		}
+
+		default: {
+			ctx.ware.flash.set(`malformed form`);
+		}
 	}
 
-	ctx.ware.flash.set(`malformed form`);
 	return ctx.build_redirect(url_list.post_edit(post_id));
 };
 

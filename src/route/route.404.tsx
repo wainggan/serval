@@ -6,7 +6,7 @@ import { render } from "../template/html.ts";
 
 const not_found: Middleware<{}, Method, never> = async ctx => {
 	const dom = (
-		<template.Base title="404">
+		<template.Base title="404" user={ null }>
 			<h1>404 : not found</h1>
 		</template.Base>
 	);

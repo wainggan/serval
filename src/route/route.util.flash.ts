@@ -5,12 +5,6 @@ import { Method, Middleware } from "../server/serve.types.ts";
 
 import * as std_cookie from "@std/http/cookie";
 
-type FlashState = {
-	message: string | null;
-	consumed: boolean;
-	outgoing: string | null;
-};
-
 export type FlashExport = {
 	flash: {
 		readonly get: () => string | null;
@@ -19,7 +13,11 @@ export type FlashExport = {
 };
 
 export const flash_middleware: Middleware<Data, Method, string, {}, FlashExport> = async ctx => {
-	const state: FlashState = {
+	const state: {
+		message: string | null;
+		consumed: boolean;
+		outgoing: string | null;
+	} = {
 		message: null,
 		consumed: false,
 		outgoing: null,

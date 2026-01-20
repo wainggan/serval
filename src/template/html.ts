@@ -104,6 +104,11 @@ type AttributeInput = Attribute & {
 		multiple?: boolean;
 	}
 	| {
+		type: 'password';
+		maxlength?: string;
+		minlength?: string;
+	}
+	| {
 		type: 'text';
 		maxlength?: string;
 		minlength?: string;
@@ -247,7 +252,7 @@ export const render = (element: Element): string => {
 			else {
 				str += child;
 			}
-			str += ` `;
+			// str += ` `;
 		}
 
 		if (element.tag !== Fragment) {

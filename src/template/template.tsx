@@ -1,4 +1,5 @@
 
+import { User } from "../db.ts";
 import * as html from "./html.ts";
 import { jsx, fragment } from "./jsx.ts";
 
@@ -29,13 +30,27 @@ export const Html = (
 	);
 };
 
-export const Navigation = () => {
+export const Navigation = (
+	{
+		user,
+	}: {
+		user: User | null,
+	}
+) => {
 	return (
 		<nav id="navigation">
 			<ul>
 				<li><a href="/">index</a></li>
 				<li><a href="/post">posts</a></li>
 				<li><a href="/tag">tags</a></li>
+				<li><a href="/user">users</a></li>
+				{
+					user === null
+						? <>
+							<li><a href="/user/login">login</a></li>
+						</>
+						: null
+				}
 			</ul>
 		</nav>
 	);
@@ -44,27 +59,18 @@ export const Navigation = () => {
 export const Base = (
 	{
 		title,
+		user,
 	}: {
 		title: string;
+		user: User | null;
 	},
 	children: html.Element[],
 ) => {
 	return (
 		<Html title={ title }>
-			<Navigation></Navigation>
+			<Navigation user={ user }></Navigation>
 			{ ...children }
 		</Html>
-	);
-};
-
-export const PageIndex = () => {
-	return (
-		<Base title="index">
-			<h1>index</h1>
-			<p>
-				welcome
-			</p>
-		</Base>
 	);
 };
 
