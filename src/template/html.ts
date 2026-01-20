@@ -213,7 +213,10 @@ export const Fragment = Symbol('fragment');
 
 export const render = (element: Element): string => {
 	// console.log('render:', element);
-	if (typeof element.tag == 'function') {
+	if (element === undefined || element === null) {
+		return "";
+	}
+	else if (typeof element.tag == 'function') {
 		return render(element.tag(element.attributes, element.children));
 	}
 	else {

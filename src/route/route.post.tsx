@@ -8,6 +8,7 @@ import { FlashExport } from "./route.util.flash.ts";
 import { Err } from "../common.ts";
 import url_list from "./url_list.ts";
 import { SessionExport } from "./route.util.session.ts";
+import { permission } from "../db.ts";
 
 const post_list: Middleware<Data, 'GET', never, FlashExport & SessionExport> = async ctx => {
 	const limit = 10;
@@ -69,22 +70,34 @@ const post_list: Middleware<Data, 'GET', never, FlashExport & SessionExport> = a
 	return ctx.build_response(str, 'ok', 'html');
 };
 
-const post_list_api: Middleware<Data, 'POST', never, FlashExport> = async ctx => {
+const post_list_api: Middleware<Data, 'POST', never, SessionExport & FlashExport> = async ctx => {
 	const form = await ctx.request.formData();
 
 	const form_type = form.get('type');
 	switch (form_type) {
 		case 'new': {
-			const post_id = await ctx.data.db.post_new();
+			const user = ctx.ware.session.user();
+			if (user === null || (user.permission & permission.post_new) === 0) {
+				ctx.ware.flash.set(`insufficient permissions.`);
+				break;
+			}
+
+			const post_id = await ctx.data.db.post_new(user.id);
 			if (post_id instanceof Err) {
 				// todo:
 				throw post_id.toError();
 			}
+
+			ctx.ware.flash.set(`successfully created post!`);
 			return ctx.build_redirect(url_list.post_edit(post_id));
+		}
+
+		default: {
+			ctx.ware.flash.set(`malformed form`);
+			break;
 		}
 	}
 
-	ctx.ware.flash.set(`malformed form`);
 	return ctx.build_redirect(url_list.post_list());
 };
 
@@ -111,6 +124,12 @@ const post_display: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExpo
 			<img src={ url[0] }/>
 		);
 	}));
+
+	const owner = await ctx.data.db.user_get(post.user_id);
+	if (owner instanceof Err) {
+		// todo:
+		throw owner.toError();
+	}
 
 	const tags = await ctx.data.db.tagged_from_post(id);
 	if (tags instanceof Err) {
@@ -139,6 +158,9 @@ const post_display: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExpo
 					...tags_element
 				}
 			</ul>
+			<p>
+				owner: <a href={ url_list.user_display(owner.username) }>{ owner.username }</a>
+			</p>
 			<a href={ url_list.post_edit(ctx.extract.post_id) }>edit</a>
 		</template.Base>
 	);
@@ -159,6 +181,12 @@ const post_edit: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExport>
 	if (files instanceof Err) {
 		// todo:
 		throw files.toError();
+	}
+
+	const owner = await ctx.data.db.user_get(post.user_id);
+	if (owner instanceof Err) {
+		// todo:
+		throw owner.toError();
 	}
 
 	const files_element = await Promise.all(files.values().map(async (x, i) => {
@@ -215,6 +243,7 @@ const post_edit: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExport>
 			<form action="" method="post" target="_self" enctype="application/x-www-form-urlencoded" id="form-meta">
 				<input type="hidden" name="type" value="meta"/>
 
+				<input type="text" name="owner" value={ owner.username }></input>
 				<input type="text" name="subject" value={ post.subject }></input>
 				<textarea name="content">{ post.content }</textarea>
 				<textarea name="tags">{ ...tags.values().map(x => x.name + ' ').toArray() }</textarea>
@@ -242,11 +271,13 @@ const post_edit_api: Middleware<Data, 'POST', 'post_id', FlashExport> = async ct
 	switch (form_type) {
 		case 'meta': {
 			const form_tags = form.get('tags');
+			const form_owner = form.get('owner');
 			const form_subject = form.get('subject');
 			const form_content = form.get('content');
 
 			if (
 				form_tags === null || typeof form_tags !== 'string' ||
+				form_owner === null || typeof form_owner !== 'string' ||
 				form_subject === null || typeof form_subject !== 'string' ||
 				form_content === null || typeof form_content !== 'string'
 			) {
@@ -274,6 +305,14 @@ const post_edit_api: Middleware<Data, 'POST', 'post_id', FlashExport> = async ct
 
 			post.subject = form_subject.trim();
 			post.content = form_content.trim();
+
+			const new_owner = await ctx.data.db.user_get_username(form_owner);
+			if (new_owner instanceof Err) {
+				ctx.ware.flash.set(new_owner.message);
+				break;
+			}
+
+			post.user_id = new_owner.id;
 
 			const result_post = await ctx.data.db.post_update(post);
 			if (result_post instanceof Err) {

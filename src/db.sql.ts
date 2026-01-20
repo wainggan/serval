@@ -91,13 +91,13 @@ export class SqlDB implements db.DB {
 		return this.db.prepare(str);
 	}
 
-	async post_new(): Promise<number> {
+	async post_new(user_id: number): Promise<number> {
 		const result = this.#_statement_run(`
 			INSERT INTO posts
-				(subject, content)
+				(user_id, subject, content)
 			VALUES
-				(?, ?);
-		`).run("no subject", "blank");
+				(?, ?, ?);
+		`).run(user_id, "no subject", "blank");
 		return result.lastInsertRowid as number;
 	}
 
@@ -127,11 +127,12 @@ export class SqlDB implements db.DB {
 		this.#_statement_run(`
 			UPDATE posts
 			SET
+				user_id = (?),
 				subject = (?),
 				content = (?)
 			WHERE
 				id = (?)
-		`).run(post.subject, post.content, post.id);
+		`).run(post.user_id, post.subject, post.content, post.id);
 
 		return null;
 	}
@@ -482,6 +483,18 @@ export class SqlDB implements db.DB {
 		result;
 
 		return null;
+	}
+
+	async user_count(): Promise<number | Err<db.DBError>> {
+		const result = this.#_statement_run(`
+			SELECT COUNT(id) as count FROM users;
+		`).get();
+
+		if (result === undefined) {
+			return new Err('unknown', `unknown error`);
+		}
+
+		return result['count'] as number;
 	}
 
 	async session_new(user_id: number): Promise<string | Err<db.DBError>> {

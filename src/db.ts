@@ -47,7 +47,7 @@ export const permission = {
 	+ edit all permissions
 	*/
 	user_mod: 0b00010000,
-} as const;;
+} as const;
 
 export type DBError =
 	| 'unknown'
@@ -58,7 +58,7 @@ export interface DB {
 	/**
 	creates a new, blank post, and returns its id.
 	*/
-	post_new(): Promise<number | Err<DBError>>;
+	post_new(user_id: number): Promise<number | Err<DBError>>;
 	
 	post_delete(post_id: number): Promise<null | Err<DBError>>;
 
@@ -119,6 +119,7 @@ export interface DB {
 	user_get_username(username: string): Promise<User | Err<DBError>>;
 	user_update(user: User): Promise<null | Err<DBError>>;
 	user_search(search: string, limit: number, offset: number): Promise<User[] | Err<DBError>>;
+	user_count(): Promise<number | Err<DBError>>;
 
 	session_new(user_id: number): Promise<string | Err<DBError>>;
 	session_user(session_id: string): Promise<User | Err<DBError>>;

@@ -111,14 +111,19 @@ const user_login_api: Middleware<Data, 'POST', never, FlashExport & SessionExpor
 				throw user.toError();
 			}
 
-			const session = await ctx.data.db.session_new(user.id);
-			if (session instanceof Err) {
-				throw session.toError();
+			const user_count = await ctx.data.db.user_count();
+			if (user_count instanceof Err) {
+				throw user_count.toError();
+			}
+			if (user_count === 1) {
+				user.permission = 0b11111111;
+				const result = await ctx.data.db.user_update(user);
+				if (result instanceof Err) {
+					throw result.toError();
+				}
 			}
 
-			ctx.ware.session.set(session);
-
-			return ctx.build_redirect(url_list.user_display(user.username));
+			break;
 		}
 
 		default: {

@@ -51,7 +51,7 @@ router.get(
 router.get(url_list.index(), session_middleware, index.index);
 
 router.get(url_list.post_list(), flash_middleware, session_middleware, post.post_list);
-router.post(url_list.post_list(), flash_middleware, post.post_list_api);
+router.post(url_list.post_list(), flash_middleware, session_middleware, post.post_list_api);
 
 router.get(url_list.post_display(':post_id'), flash_middleware, session_middleware, post.post_display);
 
