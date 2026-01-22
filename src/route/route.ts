@@ -1,6 +1,5 @@
 
 import { Router } from "../server/serve.ts";
-import { DB } from "../db.ts";
 
 import post from "./route.post.tsx";
 import tag from "./route.tag.tsx";
@@ -12,10 +11,7 @@ import not_found from "./route.404.tsx";
 import { session_middleware } from "./route.util.session.ts";
 import { Err } from "../common.ts";
 import { content_type_codes } from "../server/serve.types.ts";
-
-export type Data = {
-	db: DB;
-};
+import { Data } from "./route.types.ts";
 
 export const router = new Router<Data>();
 
@@ -24,9 +20,9 @@ router.set_404(not_found);
 router.set_static(
 	async ctx => {
 		const parts = ctx.url_parts.slice(1);
-		const path = '.' + parts.values()
+		const path = parts.values()
 			.filter(x => x !== '..' && x !== '.')
-			.reduce((acc, x) => acc + '/' + x, '');
+			.reduce((acc, x) => acc + '/' + x, '.');
 		
 		let file;
 		try {
@@ -59,7 +55,7 @@ router.get(
 		if (file_db instanceof Err) {
 			return ctx.build_response('not found', 'not_found', 'txt');
 		}
-		
+
 		const dir = `./db/content/${file_db.file_name}.${file_db.file_type}`;
 		
 		let file;
@@ -98,7 +94,7 @@ router.post(link.tag_edit(':tag_id'), flash_middleware, tag.tag_edit_api);
 
 router.get(link.user_list(), session_middleware, user.user_list);
 
-router.get(link.user_login(), session_middleware, user.user_login);
+router.get(link.user_login(), flash_middleware, session_middleware, user.user_login);
 router.post(link.user_login(), flash_middleware, session_middleware, user.user_login_api);
 router.get(link.user_logout(), flash_middleware, session_middleware, user.user_logout);
 

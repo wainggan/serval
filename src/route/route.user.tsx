@@ -1,18 +1,20 @@
 
-import { jsx, fragment } from "../template/jsx.ts";
-import { Data } from "./route.ts";
+import { jsx, fragment } from "../html/jsx.ts";
 import { Middleware } from "../server/serve.types.ts";
-import * as template from "../template/template.tsx";
+import * as template from "./template.tsx";
 import { FlashExport } from "./route.util.flash.ts";
-import { render } from "../template/html.ts";
+import { render } from "../html/html.ts";
 import link from "./link.ts";
 import { Err } from "../common.ts";
 import { SessionExport } from "./route.util.session.ts";
+import { Data } from "./route.types.ts";
 
-const user_login: Middleware<Data, 'GET', never, SessionExport> = async ctx => {
+const user_login: Middleware<Data, 'GET', never, FlashExport & SessionExport> = async ctx => {
 	const dom = (
 		<template.Base title="login" user={ ctx.ware.session.user() }>
 			<h1>login</h1>
+
+			<template.Flash message={ ctx.ware.flash.get() }/>
 
 			<form action="" method="post" target="_self" enctype="application/x-www-form-urlencoded" id="form">
 				<input type="hidden" name="type" value="login"/>
@@ -29,6 +31,7 @@ const user_login: Middleware<Data, 'GET', never, SessionExport> = async ctx => {
 				
 				<input type="text" name="username"></input>
 				<input type="password" name="password"></input>
+				<input type="password" name="password-retype"></input>
 				<button type="submit">register</button>
 			</form>
 		</template.Base>
@@ -90,11 +93,19 @@ const user_login_api: Middleware<Data, 'POST', never, FlashExport & SessionExpor
 		case 'register': {
 			const form_username = form.get('username');
 			const form_password = form.get('password');
+			const form_password_retype = form.get('password-retype');
 
 			if (
 				form_username === null || typeof form_username !== 'string' ||
-				form_password === null || typeof form_password !== 'string'
+				form_password === null || typeof form_password !== 'string' ||
+				form_password_retype === null || typeof form_password_retype !== 'string'
 			) {
+				ctx.ware.flash.set(`malformed form`);
+				break;
+			}
+
+			if (form_password !== form_password_retype) {
+				ctx.ware.flash.set(`register: passwords don't match`);
 				break;
 			}
 
@@ -103,7 +114,8 @@ const user_login_api: Middleware<Data, 'POST', never, FlashExport & SessionExpor
 
 			const user_id = await ctx.data.db.user_new(form_username, new Uint8Array(password_hash));
 			if (user_id instanceof Err) {
-				throw user_id.toError();
+				ctx.ware.flash.set(`register: username taken`);
+				break;
 			}
 
 			const user = await ctx.data.db.user_get(user_id);

@@ -1,8 +1,8 @@
 
 import { DatabaseSync, StatementSync } from "node:sqlite";
-import { Err } from "./common.ts";
-import * as db from "./db.ts";
-import { content_type_codes } from "./server/serve.types.ts";
+import { Err } from "../common.ts";
+import * as db from "./db.types.ts";
+import { content_type_codes } from "../server/serve.types.ts";
 
 export class SqlDB implements db.DB {
 	constructor(dir: string) {
@@ -22,6 +22,7 @@ export class SqlDB implements db.DB {
 
 			CREATE TABLE IF NOT EXISTS sessions (
 				id TEXT PRIMARY KEY,
+				csrf TEXT NOT NULL,
 				user_id INTEGER NOT NULL,
 				date_expire INTEGER NUL NULL,
 				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -275,7 +276,7 @@ export class SqlDB implements db.DB {
 		Promise<[string, keyof typeof content_type_codes] | Err<db.DBError>>
 	{
 		return [
-			`/content/${file.file_name}.${file.file_type}`,
+			`/content/${file.file_name}`,
 			file.file_type,
 		];
 	}
@@ -540,15 +541,16 @@ export class SqlDB implements db.DB {
 		result_del;
 
 		const session_id = crypto.randomUUID();
+		const csrf = crypto.randomUUID();
 		// 14 days
 		const expires = now + 1000 * 60 * 60 * 60 * 24 * 14;
 
 		const result_add = this.#_statement_run(`
 			INSERT INTO sessions
-				(id, user_id, date_expire)
+				(id, csrf, user_id, date_expire)
 			VALUES
-				(?, ?, ?);
-		`).run(session_id, user_id, expires);
+				(?, ?, ?, ?);
+		`).run(session_id, csrf, user_id, expires);
 		result_add;
 		
 		return session_id;
@@ -566,6 +568,19 @@ export class SqlDB implements db.DB {
 		}
 
 		return result as db.User;
+	}
+
+	async session_csrf(session_id: string): Promise<string | Err<db.DBError>> {
+		const result = this.#_statement_run(`
+			SELECT csrf FROM sessions
+			WHERE id = (?) AND sessions.date_expire > (?);
+		`).get(session_id, Date.now());
+
+		if (result === undefined) {
+			return new Err('not_found', `session id not valid`);
+		}
+
+		return result['csrf'] as string;
 	}
 
 	async session_delete(session_id: string): Promise<null | Err<db.DBError>> {

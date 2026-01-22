@@ -1,13 +1,13 @@
 
-import { jsx, fragment } from "../template/jsx.ts";
-import { Data } from "./route.ts";
+import { jsx, fragment } from "../html/jsx.ts";
 import { Middleware } from "../server/serve.types.ts";
-import * as template from "../template/template.tsx";
+import * as template from "./template.tsx";
 import { FlashExport } from "./route.util.flash.ts";
-import { render } from "../template/html.ts";
+import { render } from "../html/html.ts";
 import link from "./link.ts";
 import { Err } from "../common.ts";
 import { SessionExport } from "./route.util.session.ts";
+import { Data } from "./route.types.ts";
 
 const tag_list: Middleware<Data, 'GET', never, FlashExport & SessionExport> = async ctx => {
 	const limit = 10;

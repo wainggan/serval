@@ -1,6 +1,6 @@
 
-import { Err } from "./common.ts";
-import { content_type_codes } from "./server/serve.types.ts";
+import { Err } from "../common.ts";
+import { content_type_codes } from "../server/serve.types.ts";
 
 export type User = {
 	readonly id: number;
@@ -134,6 +134,7 @@ export interface DB {
 
 	session_new(user_id: number): Promise<string | Err<DBError>>;
 	session_user(session_id: string): Promise<User | Err<DBError>>;
+	session_csrf(session_id: string): Promise<string | Err<DBError>>;
 	session_delete(session_id: string): Promise<null | Err<DBError>>;
 }
 

@@ -1,14 +1,14 @@
 
-import { Data } from "./route.ts";
 import { content_type_codes_inv, Middleware } from "../server/serve.types.ts";
-import { jsx, fragment } from "../template/jsx.ts";
-import { render } from "../template/html.ts";
-import * as template from "../template/template.tsx";
+import { jsx, fragment } from "../html/jsx.ts";
+import { render } from "../html/html.ts";
+import * as template from "./template.tsx";
 import { FlashExport } from "./route.util.flash.ts";
 import { Err } from "../common.ts";
 import link from "./link.ts";
 import { SessionExport } from "./route.util.session.ts";
-import { permission } from "../db.ts";
+import { permission } from "../db/db.types.ts";
+import { Data } from "./route.types.ts";
 
 const post_list: Middleware<Data, 'GET', never, FlashExport & SessionExport> = async ctx => {
 	const limit = 10;

@@ -1,11 +1,14 @@
+/*
+this file exports common general types used throughout the project.
+*/
 
-export class Err<Type> {
-	constructor(type: Type, message: string) {
+export class Err<Kind> {
+	constructor(type: Kind, message: string) {
 		this.type = type;
 		this.message = message;
 	}
 
-	readonly type: Type;
+	readonly type: Kind;
 	readonly message: string;
 
 	toError(): Error {

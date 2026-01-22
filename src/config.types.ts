@@ -1,3 +1,6 @@
+/*
+this file exports `Config`, which is used to type check the config exported in this project's `config.ts`.
+*/
 
 import { content_type_codes } from "./server/serve.types.ts";
 

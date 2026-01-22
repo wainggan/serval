@@ -1,9 +1,10 @@
+
 import { Middleware } from "../server/serve.types.ts";
-import { Data } from "./route.ts";
-import { jsx } from "../template/jsx.ts";
-import * as template from "../template/template.tsx";
+import { render } from "../html/html.ts";
+import { jsx } from "../html/jsx.ts";
+import * as template from "./template.tsx";
 import { SessionExport } from "./route.util.session.ts";
-import { render } from "../template/html.ts";
+import { Data } from "./route.types.ts";
 
 const index: Middleware<Data, 'GET', never, SessionExport> = async ctx => {
 	const dom = (

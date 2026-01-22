@@ -1,8 +1,8 @@
 
-import { User } from "../db.ts";
-import link from "../route/link.ts";
-import * as html from "./html.ts";
-import { jsx, fragment } from "./jsx.ts";
+import { User } from "../db/db.types.ts";
+import link from "./link.ts";
+import * as html from "../html/html.ts";
+import { jsx, fragment } from "../html/jsx.ts";
 
 export const Html = (
 	{
