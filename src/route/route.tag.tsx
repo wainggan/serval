@@ -5,7 +5,7 @@ import { Middleware } from "../server/serve.types.ts";
 import * as template from "../template/template.tsx";
 import { FlashExport } from "./route.util.flash.ts";
 import { render } from "../template/html.ts";
-import url_list from "./url_list.ts";
+import link from "./link.ts";
 import { Err } from "../common.ts";
 import { SessionExport } from "./route.util.session.ts";
 
@@ -77,21 +77,21 @@ const tag_list_api: Middleware<Data, 'POST', never, FlashExport> = async ctx => 
 			const name = form.get('name');
 			if (name === null || typeof name !== 'string') {
 				ctx.ware.flash.set(`malformed form`);
-				return ctx.build_redirect(url_list.tag_list());
+				return ctx.build_redirect(link.tag_list());
 			}
 
 			const tag_id = await ctx.data.db.tag_new(name);
 			if (tag_id instanceof Err) {
 				ctx.ware.flash.set(`tag '${name}' exists`);
-				return ctx.build_redirect(url_list.tag_list());
+				return ctx.build_redirect(link.tag_list());
 			}
 
-			return ctx.build_redirect(url_list.tag_edit(tag_id));
+			return ctx.build_redirect(link.tag_edit(tag_id));
 		}
 	}
 	
 	ctx.ware.flash.set(`malformed form`);
-	return ctx.build_redirect(url_list.tag_list(), 'see_other');
+	return ctx.build_redirect(link.tag_list(), 'see_other');
 };
 
 const tag_display: Middleware<Data, 'GET', 'tag_id', SessionExport> = async ctx => {
@@ -110,7 +110,7 @@ const tag_display: Middleware<Data, 'GET', 'tag_id', SessionExport> = async ctx 
 				{ tag.description }
 			</p>
 
-			<a href={ url_list.tag_edit(tag_id) }>edit</a>
+			<a href={ link.tag_edit(tag_id) }>edit</a>
 		</template.Base>
 	);
 
@@ -217,7 +217,7 @@ const tag_edit_api: Middleware<Data, 'POST', 'tag_id', FlashExport> = async ctx 
 				}
 
 				ctx.ware.flash.set(`success`);
-				return ctx.build_redirect(url_list.tag_list());
+				return ctx.build_redirect(link.tag_list());
 			}
 
 			ctx.ware.flash.set(`malformed form`);
@@ -229,7 +229,7 @@ const tag_edit_api: Middleware<Data, 'POST', 'tag_id', FlashExport> = async ctx 
 		}
 	}
 
-	return ctx.build_redirect(url_list.tag_edit(tag_id));
+	return ctx.build_redirect(link.tag_edit(tag_id));
 };
 
 export default {

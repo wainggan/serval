@@ -5,7 +5,7 @@ import { Middleware } from "../server/serve.types.ts";
 import * as template from "../template/template.tsx";
 import { FlashExport } from "./route.util.flash.ts";
 import { render } from "../template/html.ts";
-import url_list from "./url_list.ts";
+import link from "./link.ts";
 import { Err } from "../common.ts";
 import { SessionExport } from "./route.util.session.ts";
 
@@ -80,7 +80,7 @@ const user_login_api: Middleware<Data, 'POST', never, FlashExport & SessionExpor
 				ctx.ware.session.set(session);
 
 				ctx.ware.flash.set(`successfully logged in!`);
-				return ctx.build_redirect(url_list.user_display(user.username));
+				return ctx.build_redirect(link.user_display(user.username));
 			} else {
 				ctx.ware.flash.set(`incorrect password.`);
 				break;
@@ -131,13 +131,13 @@ const user_login_api: Middleware<Data, 'POST', never, FlashExport & SessionExpor
 		}
 	}
 
-	return ctx.build_redirect(url_list.user_login());
+	return ctx.build_redirect(link.user_login());
 };
 
 const user_logout: Middleware<Data, 'GET', never, FlashExport & SessionExport> = async ctx => {
 	ctx.ware.session.logout();
 	ctx.ware.flash.set(`successfully logged out!`);
-	return ctx.build_redirect(url_list.index());
+	return ctx.build_redirect(link.index());
 };
 
 const user_list: Middleware<Data, 'GET', never, SessionExport> = async ctx => {
@@ -206,21 +206,21 @@ const user_list_api: Middleware<Data, 'POST', never, FlashExport> = async ctx =>
 			const name = form.get('name');
 			if (name === null || typeof name !== 'string') {
 				ctx.ware.flash.set(`malformed form`);
-				return ctx.build_redirect(url_list.tag_list());
+				return ctx.build_redirect(link.tag_list());
 			}
 
 			const tag_id = await ctx.data.db.tag_new(name);
 			if (tag_id instanceof Err) {
 				ctx.ware.flash.set(`tag '${name}' exists`);
-				return ctx.build_redirect(url_list.tag_list());
+				return ctx.build_redirect(link.tag_list());
 			}
 
-			return ctx.build_redirect(url_list.tag_edit(tag_id));
+			return ctx.build_redirect(link.tag_edit(tag_id));
 		}
 	}
 	
 	ctx.ware.flash.set(`malformed form`);
-	return ctx.build_redirect(url_list.tag_list(), 'see_other');
+	return ctx.build_redirect(link.tag_list(), 'see_other');
 };
 
 const user_display: Middleware<Data, 'GET', 'username', SessionExport> = async ctx => {
@@ -235,7 +235,7 @@ const user_display: Middleware<Data, 'GET', 'username', SessionExport> = async c
 		<template.Base title={ user.username } user={ ctx.ware.session.user() }>
 			<h1>{ user.username }</h1>
 
-			<a href={ url_list.user_edit(username) }>edit</a>
+			<a href={ link.user_edit(username) }>edit</a>
 		</template.Base>
 	);
 
@@ -295,7 +295,7 @@ const user_edit_api: Middleware<Data, 'POST', 'tag_id', FlashExport> = async ctx
 			const tag = await ctx.data.db.tag_get(tag_id);
 			if (tag instanceof Err) {
 				ctx.ware.flash.set(`not found`);
-				return ctx.build_redirect(url_list.tag_edit(tag_id));
+				return ctx.build_redirect(link.tag_edit(tag_id));
 			}
 
 			const form_name = form.get('name');
@@ -306,7 +306,7 @@ const user_edit_api: Middleware<Data, 'POST', 'tag_id', FlashExport> = async ctx
 				form_description === null || typeof form_description !== 'string'
 			) {
 				ctx.ware.flash.set(`malformed form`);
-				return ctx.build_redirect(url_list.tag_edit(tag_id));
+				return ctx.build_redirect(link.tag_edit(tag_id));
 			}
 
 			tag.name = form_name;
@@ -315,16 +315,16 @@ const user_edit_api: Middleware<Data, 'POST', 'tag_id', FlashExport> = async ctx
 			const result = await ctx.data.db.tag_update(tag);
 			if (result instanceof Err) {
 				ctx.ware.flash.set(result.message);
-				return ctx.build_redirect(url_list.tag_edit(tag_id));
+				return ctx.build_redirect(link.tag_edit(tag_id));
 			}
 			
 			ctx.ware.flash.set(`success`);
-			return ctx.build_redirect(url_list.tag_edit(tag_id));
+			return ctx.build_redirect(link.tag_edit(tag_id));
 		}
 	}
 
 	ctx.ware.flash.set(`malformed form`);
-	return ctx.build_redirect(url_list.tag_edit(tag_id));
+	return ctx.build_redirect(link.tag_edit(tag_id));
 };
 
 export default {

@@ -1,6 +1,6 @@
 
 import { User } from "../db.ts";
-import url_list from "../route/url_list.ts";
+import link from "../route/link.ts";
 import * as html from "./html.ts";
 import { jsx, fragment } from "./jsx.ts";
 
@@ -41,17 +41,17 @@ export const Navigation = (
 	return (
 		<nav id="navigation">
 			<ul>
-				<li><a href={ url_list.index() }>index</a></li>
-				<li><a href={ url_list.post_list() }>posts</a></li>
-				<li><a href={ url_list.tag_list() }>tags</a></li>
-				<li><a href={ url_list.user_list() }>users</a></li>
+				<li><a href={ link.index() }>index</a></li>
+				<li><a href={ link.post_list() }>posts</a></li>
+				<li><a href={ link.tag_list() }>tags</a></li>
+				<li><a href={ link.user_list() }>users</a></li>
 				{
 					user === null
 						? <>
-							<li><a href={ url_list.user_login() }>login</a></li>
+							<li><a href={ link.user_login() }>login</a></li>
 						</>
 						: <>
-							<li><a href={ url_list.user_logout() }>logout</a></li>
+							<li><a href={ link.user_logout() }>logout</a></li>
 						</>
 				}
 			</ul>

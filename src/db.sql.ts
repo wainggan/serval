@@ -206,7 +206,12 @@ export class SqlDB implements db.DB {
 	}
 
 	async file_delete(file_id: number): Promise<null | Err<db.DBError>> {
-		const result = await this.file_url(file_id);
+		const file = await this.file_get(file_id);
+		if (file instanceof Err) {
+			return file;
+		}
+
+		const result = await this.file_url(file);
 
 		if (result instanceof Err) {
 			return result;
@@ -227,24 +232,51 @@ export class SqlDB implements db.DB {
 		return null;
 	}
 
-	async file_url(file_id: number):
-		Promise<[string, keyof typeof content_type_codes] | Err<db.DBError>>
-	{
+	async file_update(file: db.File): Promise<null | Err<db.DBError>> {
 		const result = this.#_statement_run(`
-			SELECT file_name, file_type FROM files
+			UPDATE files
+			SET
+				post_id = (?)
+			WHERE
+				id = (?);
+
+		`).run(file.post_id, file.id);
+		result;
+		return null;
+	}
+
+	async file_get(file_id: number): Promise<db.File | Err<db.DBError>> {
+		const result = this.#_statement_run(`
+			SELECT * FROM files
 			WHERE id = (?);
 		`).get(file_id);
 
 		if (result === undefined) {
-			return new Err('not_found', `file '${file_id}' not found`);
+			return new Err('not_found', `file not found`);
 		}
 
-		const file_name = result['file_name'] as string;
-		const file_type = result['file_type'] as keyof typeof content_type_codes;
+		return result as db.File;
+	}
 
+	async file_get_name(file_name: string): Promise<db.File | Err<db.DBError>> {
+		const result = this.#_statement_run(`
+			SELECT * FROM files
+			WHERE file_name = (?);
+		`).get(file_name);
+
+		if (result === undefined) {
+			return new Err('not_found', `file not found`);
+		}
+
+		return result as db.File;
+	}
+
+	async file_url(file: db.File):
+		Promise<[string, keyof typeof content_type_codes] | Err<db.DBError>>
+	{
 		return [
-			`/content/${file_name}.${file_type}`,
-			file_type,
+			`/content/${file.file_name}.${file.file_type}`,
+			file.file_type,
 		];
 	}
 

@@ -6,7 +6,7 @@ import { render } from "../template/html.ts";
 import * as template from "../template/template.tsx";
 import { FlashExport } from "./route.util.flash.ts";
 import { Err } from "../common.ts";
-import url_list from "./url_list.ts";
+import link from "./link.ts";
 import { SessionExport } from "./route.util.session.ts";
 import { permission } from "../db.ts";
 
@@ -89,7 +89,7 @@ const post_list_api: Middleware<Data, 'POST', never, SessionExport & FlashExport
 			}
 
 			ctx.ware.flash.set(`successfully created post!`);
-			return ctx.build_redirect(url_list.post_edit(post_id));
+			return ctx.build_redirect(link.post_edit(post_id));
 		}
 
 		default: {
@@ -98,7 +98,7 @@ const post_list_api: Middleware<Data, 'POST', never, SessionExport & FlashExport
 		}
 	}
 
-	return ctx.build_redirect(url_list.post_list());
+	return ctx.build_redirect(link.post_list());
 };
 
 const post_display: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExport> = async ctx => {
@@ -116,7 +116,11 @@ const post_display: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExpo
 	}
 	
 	const files_element = await Promise.all(files.values().map(async x => {
-		const url = await ctx.data.db.file_url(x);
+		const file = await ctx.data.db.file_get(x);
+		if (file instanceof Err) {
+			throw file.toError();
+		}
+		const url = await ctx.data.db.file_url(file);
 		if (url instanceof Err) {
 			throw url.toError();
 		}
@@ -139,7 +143,7 @@ const post_display: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExpo
 
 	const tags_element = tags.map(x => {
 		return (
-			<li><a href={ url_list.tag_display(x.id) }>{ x.name }</a></li>
+			<li><a href={ link.tag_display(x.id) }>{ x.name }</a></li>
 		);
 	})
 
@@ -159,9 +163,9 @@ const post_display: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExpo
 				}
 			</ul>
 			<p>
-				owner: <a href={ url_list.user_display(owner.username) }>{ owner.username }</a>
+				owner: <a href={ link.user_display(owner.username) }>{ owner.username }</a>
 			</p>
-			<a href={ url_list.post_edit(ctx.extract.post_id) }>edit</a>
+			<a href={ link.post_edit(ctx.extract.post_id) }>edit</a>
 		</template.Base>
 	);
 	const str = render(dom);
@@ -190,7 +194,11 @@ const post_edit: Middleware<Data, 'GET', 'post_id', FlashExport & SessionExport>
 	}
 
 	const files_element = await Promise.all(files.values().map(async (x, i) => {
-		const url = await ctx.data.db.file_url(x);
+		const file = await ctx.data.db.file_get(x);
+		if (file instanceof Err) {
+			throw file.toError();
+		}
+		const url = await ctx.data.db.file_url(file);
 		if (url instanceof Err) {
 			throw url.toError();
 		}
@@ -376,7 +384,7 @@ const post_edit_api: Middleware<Data, 'POST', 'post_id', FlashExport> = async ct
 				}
 
 				ctx.ware.flash.set(`post successfully deleted`);
-				return ctx.build_redirect(url_list.post_list());
+				return ctx.build_redirect(link.post_list());
 			}
 
 			ctx.ware.flash.set(`malformed form`);
@@ -405,7 +413,7 @@ const post_edit_api: Middleware<Data, 'POST', 'post_id', FlashExport> = async ct
 			}
 			
 			ctx.ware.flash.set(`malformed form`);
-			return ctx.build_redirect(url_list.post_edit(post_id));
+			return ctx.build_redirect(link.post_edit(post_id));
 		}
 
 		default: {
@@ -413,7 +421,7 @@ const post_edit_api: Middleware<Data, 'POST', 'post_id', FlashExport> = async ct
 		}
 	}
 
-	return ctx.build_redirect(url_list.post_edit(post_id));
+	return ctx.build_redirect(link.post_edit(post_id));
 };
 
 export default {

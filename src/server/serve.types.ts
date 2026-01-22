@@ -71,6 +71,7 @@ export type Context<
 
 	readonly next: () => Promise<Response | undefined>;
 	
+	readonly url_parts: readonly string[];
 	readonly url: URL;
 	readonly query_url: (name: string) => string | undefined;
 	

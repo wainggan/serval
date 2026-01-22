@@ -1,6 +1,7 @@
 
 export default {
 	index: () => `/` as const,
+	content: <Content extends string>(content: Content) => `/content/${content}` as const,
 
 	post_list: () => `/post` as const,
 	post_display: <PostId extends string | number>(post_id: PostId) => `/post/${post_id}` as const,

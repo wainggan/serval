@@ -75,10 +75,26 @@ export class Router<Data> {
 		'TRACE': [],
 	};
 
-	private inner_not_found: undefined | types.Middleware<Data, types.Method, never, {}, {}>;
+	private inner_not_found: undefined | types.Middleware<Data, types.Method, never, {}, {}>[];
+	private inner_static: undefined | types.Middleware<Data, types.Method, never, {}, {}>[];
 
-	set_404(middleware: types.Middleware<Data, types.Method, never, {}, {}>): this {
+	set_404<
+		// deno-lint-ignore no-explicit-any
+		const U extends types.Middleware<Data, types.Method, never, any, any>[],
+	>(
+		...middleware: types_util.CheckFlow<types_util.MiddlewareToFlow<U>, U>
+	): this {
 		this.inner_not_found = middleware;
+		return this;
+	}
+
+	set_static<
+		// deno-lint-ignore no-explicit-any
+		const U extends types.Middleware<Data, types.Method, never, any, any>[],
+	>(
+		...middleware: types_util.CheckFlow<types_util.MiddlewareToFlow<U>, U>
+	): this {
+		this.inner_static = middleware;
 		return this;
 	}
 	
@@ -109,8 +125,8 @@ export class Router<Data> {
 	>(
 		match: T,
 		...middleware: types_util.CheckFlow<types_util.MiddlewareToFlow<U>, U>
-	) {
-		this.add('GET', match, middleware);
+	): this {
+		return this.add('GET', match, middleware);
 	}
 
 	post<
@@ -120,8 +136,8 @@ export class Router<Data> {
 	>(
 		match: T,
 		...middleware: types_util.CheckFlow<types_util.MiddlewareToFlow<U>, U>
-	) {
-		this.add('POST', match, middleware);
+	): this {
+		return this.add('POST', match, middleware);
 	}
 
 	put<
@@ -131,8 +147,8 @@ export class Router<Data> {
 	>(
 		match: T,
 		...middleware: types_util.CheckFlow<types_util.MiddlewareToFlow<U>, U>
-	) {
-		this.add('PUT', match, middleware);
+	): this {
+		return this.add('PUT', match, middleware);
 	}
 
 	delete<
@@ -142,8 +158,8 @@ export class Router<Data> {
 	>(
 		match: T,
 		...middleware: types_util.CheckFlow<types_util.MiddlewareToFlow<U>, U>
-	) {
-		this.add('DELETE', match, middleware);
+	): this {
+		return this.add('DELETE', match, middleware);
 	}
 
 	async resolve(request: Request, data: Data): Promise<Response> {
@@ -153,21 +169,37 @@ export class Router<Data> {
 		
 		const method = request.method as types.Method;
 
-		const method_select = this.inner[method];
-		if (method_select === undefined) {
-			return new Response(`error: ${types.status_codes.not_implemented}`);
+		let extract;
+		let middleware;
+
+		if (method === 'GET' && parts[1] === 'static' && this.inner_static !== undefined) {
+			middleware = this.inner_static;
+		}
+		else {
+			const method_select = this.inner[method];
+
+			for (const select of method_select) {
+				extract = util_template_validate(select.template, parts);
+				if (extract === null) {
+					continue;
+				}
+
+				middleware = select.middleware;
+
+				break;
+			}
 		}
 
-		for (const select of method_select) {
-			const extract = util_template_validate(select.template, parts);
-			if (extract === null) {
-				continue;
-			}
+		extract ??= {};
 
-			const middleware_iter = select.middleware.values();
-
+		// im at my limit
+		// deno-lint-ignore no-explicit-any
+		const build_context = (middleware: types.Middleware<Data, any, string, {}, {}>[]):
 			// deno-lint-ignore no-explicit-any
-			const context: types.Context<Data, typeof method, string, any, any> = {
+			types.Context<Data, types.Method, string, any, any> =>
+		{
+			const middleware_iter = middleware.values();
+			return {
 				build_response(content, status, content_type, headers = new Headers()) {
 					headers.set('Content-Type', `${types.content_type_codes[content_type]};charset=utf-8`);
 					const response = new Response(
@@ -203,6 +235,7 @@ export class Router<Data> {
 				},
 
 				url,
+				url_parts: parts,
 				query_url(name) {
 					return url.searchParams.get(name) ?? undefined;
 				},
@@ -210,28 +243,33 @@ export class Router<Data> {
 				method,
 				request,
 
-				extract,
+				extract: extract ?? {},
 				data,
 				ware: {},
-			};
+			}
+		};
 
+		if (middleware !== undefined) {
+			const context = build_context(middleware);
 			const response = await context.next();
-
 			if (response !== undefined) {
 				return response;
 			}
-
-			if (this.inner_not_found !== undefined) {
-				const not_found = await this.inner_not_found(context);
-				if (not_found !== undefined) {
-					return not_found;
-				}
-			}
-
-			throw new Error(`no response given`);
 		}
 
-		return new Response(`error: ${types.status_codes.not_found}`);
+		if (this.inner_not_found !== undefined) {
+			middleware = this.inner_not_found;
+		}
+
+		if (middleware !== undefined) {
+			const context = build_context(middleware);
+			const response = await context.next();
+			if (response !== undefined) {
+				return response;
+			}
+		}
+
+		throw new Error(`no response given`);
 	}
 }
 

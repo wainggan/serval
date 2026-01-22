@@ -16,6 +16,13 @@ export type Post = {
 	content: string;
 };
 
+export type File = {
+	readonly id: number;
+	post_id: number;
+	readonly file_name: string;
+	readonly file_type: keyof typeof content_type_codes;
+};
+
 export type Tag = {
 	readonly id: number;
 	name: string;
@@ -91,12 +98,16 @@ export interface DB {
 	deletes a file.
 	*/
 	file_delete(file_id: number): Promise<null | Err<DBError>>;
+
+	file_get(file_id: number): Promise<File | Err<DBError>>;
+	file_get_name(file_name: string): Promise<File | Err<DBError>>;
+	file_update(file: File): Promise<null | Err<DBError>>;
 	
 	/**
 	gets a valid url for retrieving a file, and
 	the file's content type.
 	*/
-	file_url(file_id: number): Promise<[string, keyof typeof content_type_codes] | Err<DBError>>;
+	file_url(file: File): Promise<[string, keyof typeof content_type_codes] | Err<DBError>>;
 
 	/**
 	creates a new tag.
